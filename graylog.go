@@ -37,7 +37,7 @@ type Message struct {
 	Host         string                 `json:"host"`
 	ShortMessage string                 `json:"short_message"`
 	FullMessage  string                 `json:"full_message,omitempty"`
-	Timestamp    int64                  `json:"timestamp,omitempty"`
+	Timestamp    string                 `json:"timestamp,omitempty"`
 	Level        uint                   `json:"level,omitempty"`
 	Extra        map[string]interface{} `json:"-"`
 }
@@ -94,6 +94,12 @@ func (g *Graylog) Close() error {
 	}
 
 	return nil
+}
+
+// FormatTimestamp adds milliseconds per GELF Payload Specification
+// Seconds since UNIX epoch with optional decimal places for milliseconds
+func FormatTimestamp(t time.Time) string {
+	return fmt.Sprintf("%d.%03d", t.Unix(), t.Nanosecond()/1000000)
 }
 
 // prepareMessage marshal the given message, add extra fields and append EOL symbols
