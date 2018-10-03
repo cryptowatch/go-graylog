@@ -37,7 +37,7 @@ type Message struct {
 	Host         string                 `json:"host"`
 	ShortMessage string                 `json:"short_message"`
 	FullMessage  string                 `json:"full_message,omitempty"`
-	Timestamp    string                 `json:"timestamp,omitempty"`
+	Timestamp    time.Time              `json:"-"`
 	Level        uint                   `json:"level,omitempty"`
 	Extra        map[string]interface{} `json:"-"`
 }
@@ -64,7 +64,7 @@ func NewGraylogTLS(e Endpoint, timeout time.Duration, config *tls.Config) (*Gray
 
 // Send writes the given message to the given graylog client
 func (g *Graylog) Send(m Message) error {
-	data, err := prepareMessage(m)
+	data, err := m.prepare()
 	if err != nil {
 		return err
 	}
@@ -96,14 +96,8 @@ func (g *Graylog) Close() error {
 	return nil
 }
 
-// FormatTimestamp adds milliseconds per GELF Payload Specification
-// Seconds since UNIX epoch with optional decimal places for milliseconds
-func FormatTimestamp(t time.Time) string {
-	return fmt.Sprintf("%d.%03d", t.Unix(), t.Nanosecond()/1000000)
-}
-
-// prepareMessage marshal the given message, add extra fields and append EOL symbols
-func prepareMessage(m Message) ([]byte, error) {
+// prepare marshal the given message, add extra fields and append EOL symbols
+func (m Message) prepare() ([]byte, error) {
 	// Marshal the GELF message in order to get base JSON
 	jsonMessage, err := json.Marshal(m)
 	if err != nil {
@@ -123,6 +117,10 @@ func prepareMessage(m Message) ([]byte, error) {
 			return []byte{}, err
 		}
 	}
+
+	// add milliseconds per GELF Payload Specification
+	ts := fmt.Sprintf("%d.%03d", m.Timestamp.Unix(), m.Timestamp.Nanosecond()/1000000)
+	c.Set(ts, "timestamp")
 
 	// Append the \n\0 sequence to the given message in order to indicate
 	// to graylog the end of the message
