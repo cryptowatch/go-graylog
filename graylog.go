@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"math"
 	"net"
 	"time"
 
@@ -119,7 +120,13 @@ func (m Message) prepare() ([]byte, error) {
 	}
 
 	// add milliseconds per GELF Payload Specification
-	ts := fmt.Sprintf("%d.%03d", m.Timestamp.Unix(), m.Timestamp.Nanosecond()/1000000)
+	ts := float64(m.Timestamp.Unix())
+
+	// truncate rather than round milliseconds to allow matches
+	// when searching external logs that store more precision
+	ms := float64(m.Timestamp.Nanosecond()) / 1000000
+	ts += math.Floor(ms) / 1000
+
 	c.Set(ts, "timestamp")
 
 	// Append the \n\0 sequence to the given message in order to indicate
