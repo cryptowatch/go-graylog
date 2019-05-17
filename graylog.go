@@ -39,7 +39,7 @@ type Message struct {
 	ShortMessage string                 `json:"short_message"`
 	FullMessage  string                 `json:"full_message,omitempty"`
 	Timestamp    time.Time              `json:"-"`
-	Level        uint                   `json:"level,omitempty"`
+	Level        uint                   `json:"level"`
 	Extra        map[string]interface{} `json:"-"`
 }
 
